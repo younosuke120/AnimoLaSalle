@@ -1,42 +1,32 @@
 <!DOCTYPE html><html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>カードバトル完全版</title>
-  <link rel="stylesheet" href="style.css">
-  <script defer src="game.js"></script>
+<meta charset="UTF-8">
+<title>カードバトル完全版</title>
+<link rel="stylesheet" href="style.css">
+<script src="game.js" defer></script>
 </head>
-<body>
-  <h1>カードバトル完全版</h1>
-  <div id="modeSelect">
-    <h2>対戦モードを選んでください</h2>
-    <button id="btnAi">AIと対戦</button>
-    <button id="btn2p">2人で対戦</button>
+<body><h1>カードバトル完全版</h1><div id="modeSelect">
+  <h2>対戦モードを選んでください</h2>
+  <button id="btnAi">AIと対戦</button>
+  <button id="btn2p">2人で対戦</button>
+</div><div id="deckBuilder">
+  <h2>デッキ構築（40枚以上、同じカードは3枚まで、エンリコは無制限）</h2>
+  <div class="cardList" id="cardPool"></div>
+  <h3>選択済みデッキ (<span id="deckCount">0</span>枚)</h3>
+  <div class="cardList" id="deckSelected"></div>
+  <button id="btnStartGame" disabled>ゲーム開始</button>
+</div><div id="gameArea">
+  <div id="status">
+    <div id="playerStatus">自分 - ライフ: 5 / マナ: 4</div>
+    <div id="enemyStatus">敵 - ライフ: 5 / マナ: 4</div>
   </div>
-  <div id="deckBuilder" style="display:none;">
-    <h2>デッキ構築</h2>
-    <div id="cardPool" class="cardList"></div>
-    <h3>選択済みデッキ (<span id="deckCount">0</span>枚)</h3>
-    <div id="deckSelected" class="cardList"></div>
-    <button id="btnStartGame">ゲーム開始</button>
-  </div>
-  <div id="gameArea" style="display:none;">
-    <div id="status">
-      <div id="playerStatus"></div>
-      <div id="enemyStatus"></div>
-    </div>
-    <div id="enemyField"></div>
-    <div id="enemyPlayer">敵プレイヤー</div>
-    <div id="playerField"></div>
-    <div id="playerPlayer">自分プレイヤー</div>
-    <div>
-      <h3>手札</h3>
-      <div id="playerHand"></div>
-    </div>
-    <button id="btnEndTurn">ターン終了</button>
-    <h3>ログ</h3>
-    <div id="log"></div>
-  </div>
-  <div class="effectTooltip" id="effectTooltip"></div>
-</body>
-</html>/
-
+  <div id="enemyField"><h3>敵の場</h3></div>
+  <div id="enemyPlayer">敵プレイヤー（ここをクリックで攻撃可能）</div>
+  <div id="playerField"><h3>自分の場</h3></div>
+  <div id="playerPlayer">自分プレイヤー</div>
+  <div><h3>手札</h3><div id="playerHand"></div></div>
+  <button id="btnEndTurn">ターン終了</button>
+  <h3>ログ</h3>
+  <div id="log"></div>
+</div><div class="effectTooltip" id="effectTooltip"></div></body>
+</html>
