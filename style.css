@@ -27,8 +27,10 @@ button:disabled {
   position: relative;
 }
 .card img, .unit img, .nexus img {
-  width: 80px; height: 100px; object-fit: contain;
+  width: 60px; height: 90px; object-fit: contain;
   border-radius: 6px 6px 0 0;
+  margin: auto;
+  display: block;
 }
 .card .name, .unit .name, .nexus .name {
   font-weight: bold; font-size: 0.9em; padding: 4px 2px;
@@ -78,9 +80,6 @@ button:disabled {
   max-width: 200px;
   text-align: center;
   font-weight: bold;
-}
-#deckBuilder {
-  display: none;
 }
 .effectTooltip {
   position: absolute;
