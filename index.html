@@ -1,123 +1,42 @@
-<!DOCTYPE html>
-<html lang="ja">
+<!DOCTYPE html><html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>カードバトル完全版</title>
-  <style>
-    body { font-family: sans-serif; background: #f0f0f0; margin: 0; padding: 0; }
-    #modeSelect, #deckBuilder, #gameArea {
-      max-width: 960px; margin: 20px auto; background: #fff; padding: 10px;
-      border-radius: 8px; box-shadow: 0 0 10px #aaa;
-    }
-    h1, h2 { text-align: center; }
-    button {
-      cursor: pointer; background-color: #4CAF50; color: white;
-      border: none; padding: 10px 20px; margin: 5px;
-      border-radius: 5px; font-size: 1em;
-    }
-    button:disabled {
-      background-color: #aaa; cursor: default;
-    }
-    .cardList, #playerHand, #playerField, #enemyField {
-      display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
-      padding: 10px; border: 2px dashed #ccc; min-height: 120px; margin-bottom: 10px;
-      background: #fafafa;
-    }
-    .card, .unit, .nexus {
-      border: 1px solid #333; width: 80px; text-align: center; background: white;
-      border-radius: 6px; box-shadow: 1px 1px 3px #999; user-select: none;
-      position: relative;
-    }
-    .card img, .unit img, .nexus img {
-      width: 80px; height: 100px; object-fit: contain;
-      border-radius: 6px 6px 0 0;
-    }
-    .card .name, .unit .name, .nexus .name {
-      font-weight: bold; font-size: 0.9em; padding: 4px 2px;
-    }
-    .card .cost, .unit .cost, .nexus .cost {
-      position: absolute; top: 6px; left: 6px; background: #fdd835; color: #333;
-      padding: 1px 5px; font-weight: bold; border-radius: 3px;
-      font-size: 0.9em;
-    }
-    .unit .power {
-      font-weight: bold; font-size: 1em; color: #d32f2f; margin: 2px 0 4px 0;
-    }
-    .tired {
-      transform: rotate(90deg);
-      opacity: 0.5;
-    }
-    .selected {
-      border: 2px solid #1976d2 !important;
-      box-shadow: 0 0 8px #1976d2 !important;
-    }
-    #status {
-      font-size: 1.2em; padding: 8px; background: #e3f2fd; border-radius: 6px; margin-bottom: 10px;
-      display: flex; justify-content: space-around;
-    }
-    #log {
-      height: 180px; overflow-y: auto; background: #fff; border: 1px solid #ccc;
-      padding: 6px; font-family: monospace; font-size: 0.9em;
-    }
-    #enemyPlayer {
-      background: #f8d7da; border: 2px solid #721c24; border-radius: 6px;
-      padding: 10px; margin: 10px auto; max-width: 200px;
-      text-align: center; font-weight: bold; cursor: pointer;
-    }
-    #playerPlayer {
-      background: #d4edda; border: 2px solid #155724; border-radius: 6px;
-      padding: 10px; margin: 10px auto; max-width: 200px;
-      text-align: center; font-weight: bold;
-    }
-    .effectTooltip {
-      position: absolute; background: #333; color: white;
-      padding: 4px 6px; border-radius: 4px;
-      font-size: 0.8em; max-width: 200px; z-index: 100;
-      pointer-events: none; opacity: 0; transition: opacity 0.3s;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="game.js"></script>
 </head>
 <body>
-
   <h1>カードバトル完全版</h1>
-
   <div id="modeSelect">
     <h2>対戦モードを選んでください</h2>
     <button id="btnAi">AIと対戦</button>
     <button id="btn2p">2人で対戦</button>
   </div>
-
   <div id="deckBuilder" style="display:none;">
-    <h2>デッキ構築（40枚以上、同じカードは3枚まで※エンリコは無制限）</h2>
-    <div class="cardList" id="cardPool"></div>
-    <h3>選択中のデッキ（<span id="deckCount">0</span>枚）</h3>
-    <div class="cardList" id="deckSelected"></div>
-    <button id="btnStartGame" disabled>ゲーム開始</button>
+    <h2>デッキ構築</h2>
+    <div id="cardPool" class="cardList"></div>
+    <h3>選択済みデッキ (<span id="deckCount">0</span>枚)</h3>
+    <div id="deckSelected" class="cardList"></div>
+    <button id="btnStartGame">ゲーム開始</button>
   </div>
-
   <div id="gameArea" style="display:none;">
     <div id="status">
-      <div id="playerStatus">自分 - ライフ: 5 / マナ: 4</div>
-      <div id="enemyStatus">敵 - ライフ: 5 / マナ: 4</div>
+      <div id="playerStatus"></div>
+      <div id="enemyStatus"></div>
     </div>
-
-    <div id="enemyField"><h3>敵の場</h3></div>
-    <div id="enemyPlayer">敵プレイヤー（クリックで攻撃）</div>
-
-    <div id="playerField"><h3>自分の場</h3></div>
+    <div id="enemyField"></div>
+    <div id="enemyPlayer">敵プレイヤー</div>
+    <div id="playerField"></div>
     <div id="playerPlayer">自分プレイヤー</div>
-
-    <div><h3>手札</h3><div id="playerHand"></div></div>
-
+    <div>
+      <h3>手札</h3>
+      <div id="playerHand"></div>
+    </div>
     <button id="btnEndTurn">ターン終了</button>
     <h3>ログ</h3>
     <div id="log"></div>
   </div>
-
   <div class="effectTooltip" id="effectTooltip"></div>
-
-  <!-- JavaScriptコードをここで読み込み -->
-  <script src="game.js"></script>
-
 </body>
-</html>
+</html>/
+
