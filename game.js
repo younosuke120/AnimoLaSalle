@@ -207,79 +207,125 @@
       el.className = card.type === "nexus" ? "nexus" : "unit";
       el.title = card.text;
       if(card.tired) el.classList.add("tired");
+
+      // エンリコのパワー＋5000判定
+      let powerDisplay = "";
+      if(card.type === "unit") {
+        let power = card.power;
+        if(card.id === "函館のエンリコ" && isPlayer){
+          if(this.players[0].hasNexus("函館のフェイクスクール")) power += 5000;
+        } else if(card.id === "函館のエンリコ" && !isPlayer){
+          if(this.players[1].hasNexus("函館のフェイクスクール")) power += 5000;
+        }
+        powerDisplay = `<div class="power">${power}</div>`;
+      }
+
       el.innerHTML = `
         <div class="cost">${card.cost}</div>
         <img src="${card.img}" alt="${card.id}">
+        <divel.innerHTML = `
+        <div class="cost">${card.cost}</div>
+        <img src="${card.img}" alt="${card.id}">
         <div class="name">${card.id}</div>
-        ${card.type==="unit" ? `<div class="power">${card.power}</div>` : ""}
+        ${powerDisplay}
       `;
-      if(isPlayer && card.type==="unit" && !card.tired){
+      if(card.type === "unit" && isPlayer && !card.tired){
         el.style.cursor = "pointer";
         el.onclick = () => this.selectAttacker(card, el);
       }
       return el;
     }
+
     renderHand(){
       const handDiv = document.getElementById("playerHand");
       handDiv.innerHTML = "";
-      this.players[0].hand.forEach(card => {
+      this.players[0].hand.forEach((card, idx) => {
         const el = this.createCardElement(card);
         if(card.cost <= this.players[0].mana){
+          el.style.borderColor = "#1976d2";
           el.style.cursor = "pointer";
-          el.onclick = () => this.playCard(card);
+          el.onclick = () => this.playCard(idx);
+        } else {
+          el.style.opacity = "0.5";
         }
         handDiv.appendChild(el);
       });
     }
-    selectAttacker(card, el){
-      if(this.phase !== "play") return;
-      if(card.tired) return;
+
+    selectAttacker(card, element){
       if(this.selectedAttacker){
-        this.selectedAttacker = null;
-        this.clearSelection();
-        this.log("攻撃対象の選択をキャンセルしました。");
-      } else {
-        this.selectedAttacker = card;
-        el.classList.add("selected");
-        this.log(card.id + "を攻撃に選択しました。敵プレイヤーをクリックしてください。");
+        this.selectedAttackerElement.classList.remove("selected");
       }
+      this.selectedAttacker = card;
+      this.selectedAttackerElement = element;
+      element.classList.add("selected");
+      this.log(card.id + " が攻撃対象を選択中...");
     }
-    clearSelection(){
-      document.querySelectorAll(".selected").forEach(el => el.classList.remove("selected"));
-    }
-    playCard(card){
-      if(this.players[0].mana < card.cost) {
+
+    playCard(handIndex){
+      if(this.phase !== "play") return;
+      const player = this.players[0];
+      const card = player.hand[handIndex];
+      if(card.cost > player.mana){
         alert("マナが足りません");
         return;
       }
-      if(card.type !== "unit" && card.type !== "nexus") {
-        alert("このカードはまだプレイできません");
+      if(player.field.length >= 5){
+        alert("場に出せるキャラは5体までです");
         return;
       }
-      this.players[0].mana -= card.cost;
-      this.players[0].hand.splice(this.players[0].hand.indexOf(card),1);
-      this.players[0].field.push(card);
-      this.log(card.id + "を召喚しました。");
-      if(card.effect){
-        card.effect(this, this.players[0], this.players[1]);
-      }
+      player.mana -= card.cost;
+      player.hand.splice(handIndex,1);
+      player.field.push(card);
+      this.log(player.name + "が「" + card.id + "」を召喚した！");
+      if(card.effect) card.effect(this, player, this.players[1]);
       this.updateUI();
     }
-    attackEnemyPlayer(){
-      if(!this.selectedAttacker) {
-        alert("まず攻撃するキャラを選択してください");
+
+    attackTarget(target){
+      if(!this.selectedAttacker){
+        alert("まず攻撃するキャラを選んでください");
+        return;
+      }
+      if(this.selectedAttacker.tired){
+        alert("疲労状態のキャラは攻撃できません");
         return;
       }
       const attacker = this.selectedAttacker;
+      const opponent = this.players[1];
+      if(target === opponent){
+        opponent.life -= 1;
+        this.log(attacker.id + "が直接攻撃！敵のライフが1減った");
+        attacker.tired = true;
+      } else {
+        // ブロック処理
+        if(target.tired){
+          alert("疲労状態のキャラはブロックできません");
+          return;
+        }
+        this.log(attacker.id + "が" + target.id + "を攻撃した！");
+        if(attacker.power > target.power){
+          this.log(target.id + "は破壊された！");
+          opponent.moveToTrash(target);
+          attacker.tired = true;
+        } else if(attacker.power < target.power){
+          this.log(attacker.id + "は破壊された！");
+          this.players[0].moveToTrash(attacker);
+          attacker.tired = true;
+        } else {
+          this.log("同じパワーのため両者破壊！");
+          this.players[0].moveToTrash(attacker);
+          opponent.moveToTrash(target);
+        }
+      }
+      this.selectedAttackerElement.classList.remove("selected");
       this.selectedAttacker = null;
-      this.clearSelection();
-      this.log(attacker.id + "が敵プレイヤーに攻撃！");
-      attacker.tired = true;
-      this.players[1].life -= 1;
-      this.checkGameOver();
+      this.selectedAttackerElement = null;
       this.updateUI();
+      this.checkGameEnd();
     }
-    checkGameOver(){
+
+    checkGameEnd(){
       if(this.players[0].life <= 0){
         alert("あなたの負けです");
         this.isGameOver = true;
@@ -287,28 +333,113 @@
         alert("あなたの勝ちです！");
         this.isGameOver = true;
       }
+      if(this.isGameOver){
+        this.phase = "end";
+        document.getElementById("btnEndTurn").disabled = true;
+      }
     }
+
     promptPlay(){
-      this.updateUI();
-      this.log(this.currentPlayer.name + "のターンです。");
+      // 敵ターンは簡略AIで自動処理
+      if(this.turnPlayerIndex === 1){
+        this.enemyTurn();
+      } else {
+        this.log("あなたのターンです。カードをプレイして、攻撃してください。");
+      }
     }
+
     endTurn(){
       if(this.isGameOver) return;
-      // 疲労解除＆ターン入れ替え＆マナ回復＆カードドロー
-      this.currentPlayer.field.forEach(c => c.tired = false);
-      this.turnPlayerIndex = 1 - this.turnPlayerIndex;
-      this.currentPlayer = this.players[this.turnPlayerIndex];
-      this.opponent = this.players[1 - this.turnPlayerIndex];
+      const player = this.players[this.turnPlayerIndex];
+      player.manaMax++;
+      player.mana = player.manaMax;
+      this.log(player.name + "のターン終了。マナが" + player.manaMax + "に増加し全回復。");
+      player.field.forEach(card => card.tired = false);
 
-      this.currentPlayer.manaMax += 1;
-      this.currentPlayer.mana = this.currentPlayer.manaMax;
-
-      const drawn = this.currentPlayer.draw();
-      if(!drawn){
-        alert(this.currentPlayer.name + "はデッキ切れで敗北しました。");
-        this.isGameOver = true;
-        return;
+      if(this.turnPlayerIndex === 0){
+        this.turnPlayerIndex = 1;
+        this.currentPlayer = this.players[1];
+        this.opponent = this.players[0];
+        // 敵は自動処理
+        this.currentPlayer.draw();
+        this.updateUI();
+        this.promptPlay();
+      } else {
+        this.turnPlayerIndex = 0;
+        this.currentPlayer = this.players[0];
+        this.opponent = this.players[1];
+        this.currentPlayer.draw();
+        this.updateUI();
+        this.promptPlay();
       }
+    }
 
-      // エンリコ破壊処理
-      this
+    enemyTurn(){
+      this.log("敵のターン開始");
+      const enemy = this.players[1];
+      const player = this.players[0];
+
+      // 敵は1枚でも出せるなら出す
+      enemy.hand.forEach((card, idx) => {
+        if(card.cost <= enemy.mana && enemy.field.length < 5){
+          enemy.mana -= card.cost;
+          enemy.field.push(card);
+          enemy.hand.splice(idx,1);
+          this.log("敵が「" + card.id + "」を召喚した！");
+          if(card.effect) card.effect(this, enemy, player);
+          return;
+        }
+      });
+      this.updateUI();
+
+      // 敵が攻撃可能なキャラで攻撃
+      enemy.field.forEach(card => {
+        if(card.tired) return;
+        if(player.field.length > 0){
+          // ブロックは最初の味方キャラで
+          const blocker = player.field[0];
+          this.log(card.id + "が" + blocker.id + "を攻撃！");
+          if(card.power > blocker.power){
+            this.log(blocker.id + "は破壊された！");
+            player.moveToTrash(blocker);
+          } else if(card.power < blocker.power){
+            this.log(card.id + "は破壊された！");
+            enemy.moveToTrash(card);
+          } else {
+            this.log("同じパワーのため両者破壊！");
+            enemy.moveToTrash(card);
+            player.moveToTrash(blocker);
+          }
+          card.tired = true;
+        } else {
+          player.life -= 1;
+          this.log(card.id + "が直接攻撃！あなたのライフが1減った！");
+          card.tired = true;
+        }
+      });
+      this.updateUI();
+      this.checkGameEnd();
+      if(!this.isGameOver){
+        this.endTurn();
+      }
+    }
+  }
+
+  const game = new Game();
+
+  document.getElementById("btnStartGame").onclick = () => game.startGame();
+  document.getElementById("btnEndTurn").onclick = () => game.endTurn();
+
+  document.getElementById("enemyPlayer").onclick = () => {
+    if(game.selectedAttacker){
+      game.attackTarget(game.players[1]);
+    } else {
+      alert("まず攻撃するキャラを選んでください");
+    }
+  };
+
+  // 対戦モード選択からデッキ構築へ
+  document.getElementById("btnAi").onclick = () => game.startDeckBuild();
+  document.getElementById("btn2p").onclick = () => alert("2人対戦は未実装です。AI対戦を選んでください。");
+
+})();
